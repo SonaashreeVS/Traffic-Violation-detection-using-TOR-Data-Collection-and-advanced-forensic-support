@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Violation Detection System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .upload-area {
+            text-align: center;
+            padding: 40px 20px;
+            border: 2px dashed #adb5bd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .upload-area i {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-area h3 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .upload-area p {
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .upload-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .preview-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .results-section {
+            grid-column: 1 / -1;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .violation-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #dc3545;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .violation-card.speeding {
+            border-left-color: #ffc107;
+        }
+
+        .violation-card.no-helmet {
+            border-left-color: #fd7e14;
+        }
+
+        .violation-card.red-light {
+            border-left-color: #dc3545;
+        }
+
+        .violation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .violation-type {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #dc3545;
+        }
+
+        .violation-card.speeding .violation-type {
+            color: #ffc107;
+        }
+
+        .violation-card.no-helmet .violation-type {
+            color: #fd7e14;
+        }
+
+        .violation-card.red-light .violation-type {
+            color: #dc3545;
+        }
+
+        .confidence {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .violation-details {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .violation-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .violation-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .violation-info-label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .violation-info-value {
+            color: #6c757d;
+        }
+
+        .license-plate {
+            background: #007bff;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 1.1em;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .processed-image {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 20px;
+            display: none;
+        }
+
+        .traffic-light-status {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .traffic-light-status.red {
+            border-left: 5px solid #dc3545;
+        }
+
+        .traffic-light-status.green {
+            border-left: 5px solid #28a745;
+        }
+
+        .traffic-light-status.yellow {
+            border-left: 5px solid #ffc107;
+        }
+
+        .traffic-light-text {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .traffic-light-status.red .traffic-light-text {
+            color: #dc3545;
+        }
+
+        .traffic-light-status.green .traffic-light-text {
+            color: #28a745;
+        }
+
+        .traffic-light-status.yellow .traffic-light-text {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Traffic Violation Detection System</h1>
+            <p>Upload a road image to detect traffic violations and license plates in real-time</p>
+        </div>
+
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h2>📁 Upload Road Image</h2>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div>📸</div>
+                    <h3>Click to Upload Image</h3>
+                    <p>Supported formats: JPG, JPEG, PNG</p>
+                    <p>Maximum file size: 10MB</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        Choose File
+                    </button>
+                </div>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png" onchange="handleFileSelect(event)">
+                
+                <div class="alert success" id="successAlert">
+                    ✅ Image uploaded successfully! Processing...
+                </div>
+                <div class="alert error" id="errorAlert">
+                    ❌ Error uploading image. Please try again.
+                </div>
+
+                <button class="upload-btn" id="analyzeBtn" onclick="analyzeImage()" style="width: 100%; margin-top: 20px;" disabled>
+                    🚀 Analyze for Violations
+                </button>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-section">
+                <h2>👁️ Image Preview</h2>
+                <img id="imagePreview" class="image-preview" alt="Image preview">
+                <div id="noPreview" style="text-align: center; color: #6c757d; padding: 40px;">
+                    <div style="font-size: 3em; margin-bottom: 10px;">🖼️</div>
+                    <p>No image selected</p>
+                    <p>Upload an image to see preview</p>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection">
+                <h2>📊 Detection Results</h2>
+                
+                <!-- Traffic Light Status -->
+                <div id="trafficLightStatus"></div>
+
+                <!-- Statistics -->
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Stats will be populated by JavaScript -->
+                </div>
+
+                <!-- Violations List -->
+                <h3 style="margin: 30px 0 20px 0;">🚨 Detected Violations</h3>
+                <div id="violationsList">
+                    <!-- Violations will be populated by JavaScript -->
+                </div>
+
+                <!-- Processed Image -->
+                <img id="processedImage" class="processed-image" alt="Processed image with detections">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFile = null;
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                showAlert('error', 'Please select a valid image file (JPG, JPEG, or PNG)');
+                return;
+            }
+
+            // Validate file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showAlert('error', 'File size must be less than 10MB');
+                return;
+            }
+
+            currentFile = file;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('imagePreview');
+                const noPreview = document.getElementById('noPreview');
+                
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                noPreview.style.display = 'none';
+                
+                // Enable analyze button
+                document.getElementById('analyzeBtn').disabled = false;
+                
+                showAlert('success', 'Image uploaded successfully! Ready for analysis.');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showAlert(type, message) {
+            const successAlert = document.getElementById('successAlert');
+            const errorAlert = document.getElementById('errorAlert');
+            
+            if (type === 'success') {
+                successAlert.textContent = message;
+                successAlert.style.display = 'block';
+                errorAlert.style.display = 'none';
+            } else {
+                errorAlert.textContent = message;
+                errorAlert.style.display = 'block';
+                successAlert.style.display = 'none';
+            }
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                successAlert.style.display = 'none';
+                errorAlert.style.display = 'none';
+            }, 5000);
+        }
+
+        async function analyzeImage() {
+            if (!currentFile) {
+                showAlert('error', 'Please select an image first');
+                return;
+            }
+
+            // Show loading state
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<div class="spinner" style="display: inline-block; width: 20px; height: 20px; margin-right: 10px;"></div> Analyzing...';
+
+            // Show results section with loading
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.style.display = 'block';
+            document.getElementById('violationsList').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing image for traffic violations...</p>
+                    <p>Detecting vehicles, license plates, and violations</p>
+                </div>
+            `;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', currentFile);
+
+                // Send to your Flask server
+                const response = await fetch('http://localhost:5000/api/analyze-road-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const results = await response.json();
+
+                // Display results
+                displayResults(results);
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                document.getElementById('violationsList').innerHTML = `
+                    <div class="alert error">
+                        ❌ Analysis failed: ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Reset button
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🚀 Analyze for Violations';
+            }
+        }
+
+        function displayResults(results) {
+            const violationsList = document.getElementById('violationsList');
+            const statsGrid = document.getElementById('statsGrid');
+            const processedImage = document.getElementById('processedImage');
+            const trafficLightStatus = document.getElementById('trafficLightStatus');
+
+            if (!results.success) {
+                violationsList.innerHTML = `
+                    <div class="alert error">
+                        ❌ Analysis failed: ${results.error || 'Unknown error'}
+                    </div>
+                `;
+                return;
+            }
+
+            // Display traffic light status
+            const trafficLightColor = results.traffic_light_status || 'unknown';
+            trafficLightStatus.innerHTML = `
+                <div class="traffic-light-status ${trafficLightColor}">
+                    <div class="traffic-light-text">
+                        🚦 Traffic Light: ${trafficLightColor.toUpperCase()}
+                    </div>
+                </div>
+            `;
+
+            // Display statistics
+            const summary = results.violation_summary || {};
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${results.vehicles_detected || 0}</div>
+                    <div class="stat-label">Total Vehicles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${summary.total || 0}</div>
+                    <div class="stat-label">Total Violations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${summary.red_light || 0}</div>
+                    <div class="stat-label">Red Light Violations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${summary.no_helmet || 0}</div>
+                    <div class="stat-label">No Helmet Violations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${summary.speeding || 0}</div>
+                    <div class="stat-label">Speeding Violations</div>
+                </div>
+            `;
+
+            // Display violations with DETAILS
+            const violations = results.violations || [];
+            if (violations.length === 0) {
+                violationsList.innerHTML = `
+                    <div class="alert success">
+                        ✅ No traffic violations detected! All vehicles are following traffic rules.
+                    </div>
+                `;
+            } else {
+                let violationsHTML = '';
+                violations.forEach((violation, index) => {
+                    const violationClass = getViolationClass(violation.type);
+                    const violationIcon = getViolationIcon(violation.type);
+                    
+                    violationsHTML += `
+                        <div class="violation-card ${violationClass}">
+                            <div class="violation-header">
+                                <span class="violation-type">${violationIcon} ${getViolationTitle(violation.type)}</span>
+                                <span class="confidence">${(violation.confidence * 100).toFixed(1)}% confident</span>
+                            </div>
+                            
+                            <div class="violation-info">
+                                <div class="violation-info-item">
+                                    <span class="violation-info-label">Vehicle Type:</span>
+                                    <span class="violation-info-value">${violation.vehicle_type || 'Unknown'}</span>
+                                </div>
+                                <div class="violation-info-item">
+                                    <span class="violation-info-label">Severity:</span>
+                                    <span class="violation-info-value" style="color: ${violation.severity === 'HIGH' ? '#dc3545' : '#ffc107'}">${violation.severity || 'MEDIUM'}</span>
+                                </div>
+                                ${violation.detected_speed ? `
+                                <div class="violation-info-item">
+                                    <span class="violation-info-label">Detected Speed:</span>
+                                    <span class="violation-info-value">${violation.detected_speed} km/h (Limit: ${violation.speed_limit || 50} km/h)</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="violation-details">
+                                ${getViolationDescription(violation)}
+                            </div>
+                            
+                            ${violation.license_plate && violation.license_plate !== 'Not detected' ? `
+                                <div style="margin-top: 10px;">
+                                    <strong>License Plate:</strong>
+                                    <span class="license-plate">${violation.license_plate}</span>
+                                </div>
+                            ` : `
+                                <div style="margin-top: 10px; color: #6c757d;">
+                                    <strong>License Plate:</strong> Not detected
+                                </div>
+                            `}
+                        </div>
+                    `;
+                });
+                violationsList.innerHTML = violationsHTML;
+            }
+
+            // Display processed image if available
+            if (results.visualization_base64) {
+                processedImage.src = `data:image/jpeg;base64,${results.visualization_base64}`;
+                processedImage.style.display = 'block';
+            }
+
+            // Show full report if available
+            if (results.violation_report) {
+                const reportSection = document.createElement('div');
+                reportSection.style.marginTop = '30px';
+                reportSection.style.padding = '20px';
+                reportSection.style.background = '#e9ecef';
+                reportSection.style.borderRadius = '10px';
+                reportSection.style.whiteSpace = 'pre-line';
+                reportSection.style.fontFamily = 'monospace';
+                reportSection.style.fontSize = '14px';
+                reportSection.innerHTML = `<h3>📋 Detailed Analysis Report</h3><p>${results.violation_report}</p>`;
+                resultsSection.appendChild(reportSection);
+            }
+        }
+
+        function getViolationClass(violationType) {
+            const typeMap = {
+                'RED_LIGHT_VIOLATION': 'red-light',
+                'NO_HELMET': 'no-helmet',
+                'SPEEDING': 'speeding'
+            };
+            return typeMap[violationType] || 'red-light';
+        }
+
+        function getViolationIcon(violationType) {
+            const iconMap = {
+                'RED_LIGHT_VIOLATION': '🔴',
+                'NO_HELMET': '👷',
+                'SPEEDING': '🚀'
+            };
+            return iconMap[violationType] || '⚠️';
+        }
+
+        function getViolationTitle(violationType) {
+            const titleMap = {
+                'RED_LIGHT_VIOLATION': 'Red Light Violation',
+                'NO_HELMET': 'No Helmet Violation',
+                'SPEEDING': 'Speeding Violation'
+            };
+            return titleMap[violationType] || violationType;
+        }
+
+        function getViolationDescription(violation) {
+            switch (violation.type) {
+                case 'RED_LIGHT_VIOLATION':
+                    return `Vehicle crossed the intersection while the traffic light was red. This is a serious traffic violation that can lead to accidents.`;
+                
+                case 'NO_HELMET':
+                    return `Motorcycle rider detected without a safety helmet. This violates mandatory helmet laws and puts the rider at serious risk.`;
+                
+                case 'SPEEDING':
+                    const overLimit = violation.detected_speed - (violation.speed_limit || 50);
+                    return `Vehicle traveling at ${violation.detected_speed} km/h in a ${violation.speed_limit || 50} km/h zone. Exceeding speed limit by ${overLimit} km/h.`;
+                
+                default:
+                    return `Traffic violation detected. Type: ${violation.type}`;
+            }
+        }
+
+        // Drag and drop support
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.querySelector('.upload-area');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                uploadArea.style.borderColor = '#667eea';
+                uploadArea.style.background = '#f8f9ff';
+            }
+
+            function unhighlight() {
+                uploadArea.style.borderColor = '#adb5bd';
+                uploadArea.style.background = 'white';
+            }
+
+            uploadArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) {
+                    handleFiles(files);
+                }
+            }
+
+            function handleFiles(files) {
+                const file = files[0];
+                if (file) {
+                    const event = { target: { files: [file] } };
+                    handleFileSelect(event);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
